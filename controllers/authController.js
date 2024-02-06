@@ -1,7 +1,8 @@
 import userModel from "../models/userModel.js"
+import orderModel from "../models/orderModel.js";
+
 import { hashPassword, comparePassword } from "./../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
-
 
 export const registerController = async (req, res) =>{
   try {
@@ -25,8 +26,6 @@ export const registerController = async (req, res) =>{
     if(!answer){
       return res.send({message:'Answer is Required'})
   }
-    
-    
     //check user
     const exisitingUser = await userModel.findOne({ email });
     //exisiting user
@@ -156,9 +155,7 @@ export const forgotPasswordController = async (req, res) => {
     });
   }
 };
-
 // testController
-
 export const testController = (req, res) => {
   try {
     res.send("protected Routes"  );
@@ -199,6 +196,62 @@ export const updateProfileController = async (req, res) => {
     res.status(400).send({
       success: false,
       message: "Error WHile Update profile",
+      error,
+    });
+  }
+};
+//orders
+export const getOrdersController = async (req, res) => {
+  try {
+    const orders = await orderModel
+      .find({ buyer: req.user._id })
+      .populate("products", "-photo")
+      .populate("buyer", "name");
+    res.json(orders);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error WHile Geting Orders",
+      error,
+    });
+  }
+};
+//orders
+export const getAllOrdersController = async (req, res) => {
+  try {
+    const orders = await orderModel
+      .find({})
+      .populate("products", "-photo")
+      .populate("buyer", "name")
+      .sort({ createdAt: 'desc' });
+    res.json(orders);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error WHile Geting Orders",
+      error,
+    });
+  }
+};
+
+//order status
+export const orderStatusController = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    const orders = await orderModel.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true }
+    );
+    res.json(orders);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error While Updateing Order",
       error,
     });
   }
